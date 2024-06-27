@@ -1,23 +1,22 @@
-import { MongoClient } from 'mongodb';
+import { Client } from 'pg';
 
-const uri = process.env.MONGODB_URI as string; // your mongodb connection string
-const options = {};
+const connectionString = process.env.NEON_DB_CONNECTION_STRING as string; // your Postgres connection string
 
 declare global {
-  var _mongoClientPromise: Promise<MongoClient>;
+  var _pgClientPromise: Promise<Client>;
 }
 
 class Singleton {
   private static _instance: Singleton;
-  private client: MongoClient;
-  private clientPromise: Promise<MongoClient>;
+  private client: Client;
+  private clientPromise: Promise<Client>;
   private constructor() {
-    this.client = new MongoClient(uri, options);
+    this.client = new Client({ connectionString });
     this.clientPromise = this.client.connect();
     if (process.env.NODE_ENV === 'development') {
       // In development mode, use a global variable so that the value
       // is preserved across module reloads caused by HMR (Hot Module Replacement).
-      global._mongoClientPromise = this.clientPromise;
+      global._pgClientPromise = this.clientPromise;
     }
   }
 
@@ -30,6 +29,6 @@ class Singleton {
 }
 const clientPromise = Singleton.instance;
 
-// Export a module-scoped MongoClient promise. By doing this in a
+// Export a module-scoped Postgres Client promise. By doing this in a
 // separate module, the client can be shared across functions.
 export default clientPromise;
