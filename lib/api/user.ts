@@ -120,8 +120,7 @@ export async function getAllUsers(): Promise<ResultProps[]> {
               COUNT(*) AS count
        FROM users
        GROUP BY LOWER(SUBSTRING(name, 1, 1))
-       ORDER BY followers DESC, _id
-       LIMIT 100`
+       ORDER BY _id`
     );
 
     return res.rows;
