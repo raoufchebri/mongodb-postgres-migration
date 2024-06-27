@@ -70,21 +70,29 @@ export async function getUser(username: string): Promise<UserProps | null> {
 }
 
 export async function getFirstUser(): Promise<UserProps | null> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  const results = await collection.findOne<UserProps>(
-    {},
-    {
-      projection: { _id: 0, emailVerified: 0 }
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRES_URI,
+  });
+
+  await client.connect();
+
+  try {
+    const res = await client.query(
+      'SELECT id, name, username, email, image, bio, bio_mdx, followers, verified FROM users ORDER BY id LIMIT 1'
+    );
+
+    if (res.rows.length > 0) {
+      const user = res.rows[0];
+      return {
+        ...user,
+        bioMdx: await getMdxSource(user.bio || placeholderBio),
+      };
+    } else {
+      return null;
     }
-  );
-  if (results) {
-    return {
-      ...results,
-      bioMdx: await getMdxSource(results.bio || placeholderBio)
-    };
-  } else {
-    return null;
+  } finally {
+    await client.end();
   }
 }
 
