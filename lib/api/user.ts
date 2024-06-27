@@ -131,82 +131,34 @@ export async function getAllUsers(): Promise<ResultProps[]> {
 }
 
 export async function searchUser(query: string): Promise<UserProps[]> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection
-    .aggregate<UserProps>([
-      {
-        $search: {
-          index: 'name-index',
-          /*
-          name-index is a search index as follows:
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRES_URI,
+  });
 
-          {
-            "mappings": {
-              "fields": {
-                "followers": {
-                  "type": "number"
-                },
-                "name": {
-                  "analyzer": "lucene.whitespace",
-                  "searchAnalyzer": "lucene.whitespace",
-                  "type": "string"
-                },
-                "username": {
-                  "type": "string"
-                }
-              }
-            }
-          }
+  await client.connect();
 
-          */
-          text: {
-            query: query,
-            path: {
-              wildcard: '*' // match on both name and username
-            },
-            fuzzy: {},
-            score: {
-              // search ranking algorithm: multiply relevance score by the log1p of follower count
-              function: {
-                multiply: [
-                  {
-                    score: 'relevance'
-                  },
-                  {
-                    log1p: {
-                      path: {
-                        value: 'followers'
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        }
-      },
-      {
-        // filter out users that are not verified
-        $match: {
-          verified: true
-        }
-      },
-      // limit to 10 results
-      {
-        $limit: 10
-      },
-      {
-        $project: {
-          _id: 0,
-          emailVerified: 0,
-          score: {
-            $meta: 'searchScore'
-          }
-        }
-      }
-    ])
-    .toArray();
+  try {
+    const res = await client.query(
+      `SELECT id, name, username, email, image, bio, bio_mdx, followers, verified,
+              ts_rank_cd(to_tsvector('english', name || ' ' || username), query) AS score
+       FROM users, to_tsquery('english', $1) query
+       WHERE to_tsvector('english', name || ' ' || username) @@ query
+         AND verified = TRUE
+       ORDER BY score DESC
+       LIMIT 10`,
+      [query]
+    );
+
+    return await Promise.all(
+      res.rows.map(async (user: UserProps) => ({
+        ...user,
+        bioMdx: await getMdxSource(user.bio || placeholderBio),
+      }))
+    );
+  } finally {
+    await client.end();
+  }
 }
 
 export async function getUserCount(): Promise<number> {
