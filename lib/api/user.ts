@@ -97,45 +97,37 @@ export async function getFirstUser(): Promise<UserProps | null> {
 }
 
 export async function getAllUsers(): Promise<ResultProps[]> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection
-    .aggregate<ResultProps>([
-      {
-        //sort by follower count
-        $sort: {
-          followers: -1
-        }
-      },
-      {
-        $limit: 100
-      },
-      {
-        $group: {
-          _id: {
-            $toLower: { $substrCP: ['$name', 0, 1] }
-          },
-          users: {
-            $push: {
-              name: '$name',
-              username: '$username',
-              email: '$email',
-              image: '$image',
-              followers: '$followers',
-              verified: '$verified'
-            }
-          },
-          count: { $sum: 1 }
-        }
-      },
-      {
-        //sort alphabetically
-        $sort: {
-          _id: 1
-        }
-      }
-    ])
-    .toArray();
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRES_URI,
+  });
+
+  await client.connect();
+
+  try {
+    const res = await client.query(
+      `SELECT LOWER(SUBSTRING(name, 1, 1)) AS _id,
+              JSON_AGG(
+                JSON_BUILD_OBJECT(
+                  'name', name,
+                  'username', username,
+                  'email', email,
+                  'image', image,
+                  'followers', followers,
+                  'verified', verified
+                )
+              ) AS users,
+              COUNT(*) AS count
+       FROM users
+       GROUP BY LOWER(SUBSTRING(name, 1, 1))
+       ORDER BY followers DESC, _id
+       LIMIT 100`
+    );
+
+    return res.rows;
+  } finally {
+    await client.end();
+  }
 }
 
 export async function searchUser(query: string): Promise<UserProps[]> {
@@ -146,7 +138,7 @@ export async function searchUser(query: string): Promise<UserProps[]> {
       {
         $search: {
           index: 'name-index',
-          /* 
+          /*
           name-index is a search index as follows:
 
           {
