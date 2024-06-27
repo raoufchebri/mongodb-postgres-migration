@@ -42,19 +42,30 @@ Tincidunt quam neque in cursus viverra orci, dapibus nec tristique. Nullam ut si
 Et vivamus lorem pulvinar nascetur non. Pulvinar a sed platea rhoncus ac mauris amet. Urna, sem pretium sit pretium urna, senectus vitae. Scelerisque fermentum, cursus felis dui suspendisse velit pharetra. Augue et duis cursus maecenas eget quam lectus. Accumsan vitae nascetur pharetra rhoncus praesent dictum risus suspendisse.`;
 
 export async function getUser(username: string): Promise<UserProps | null> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  const results = await collection.findOne<UserProps>(
-    { username },
-    { projection: { _id: 0, emailVerified: 0 } }
-  );
-  if (results) {
-    return {
-      ...results,
-      bioMdx: await getMdxSource(results.bio || placeholderBio)
-    };
-  } else {
-    return null;
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRES_URI,
+  });
+
+  await client.connect();
+
+  try {
+    const res = await client.query(
+      'SELECT id, name, username, email, image, bio, bio_mdx, followers, verified FROM users WHERE username = $1',
+      [username]
+    );
+
+    if (res.rows.length > 0) {
+      const user = res.rows[0];
+      return {
+        ...user,
+        bioMdx: await getMdxSource(user.bio || placeholderBio),
+      };
+    } else {
+      return null;
+    }
+  } finally {
+    await client.end();
   }
 }
 
