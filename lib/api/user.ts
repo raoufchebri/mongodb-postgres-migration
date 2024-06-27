@@ -162,13 +162,35 @@ export async function searchUser(query: string): Promise<UserProps[]> {
 }
 
 export async function getUserCount(): Promise<number> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection.countDocuments();
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRES_URI,
+  });
+
+  await client.connect();
+
+  try {
+    const res = await client.query('SELECT COUNT(*) FROM users');
+    return parseInt(res.rows[0].count, 10);
+  } finally {
+    await client.end();
+  }
 }
 
 export async function updateUser(username: string, bio: string) {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection.updateOne({ username }, { $set: { bio } });
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRES_URI,
+  });
+
+  await client.connect();
+
+  try {
+    await client.query(
+      'UPDATE users SET bio = $2 WHERE username = $1',
+      [username, bio]
+    );
+  } finally {
+    await client.end();
+  }
 }
