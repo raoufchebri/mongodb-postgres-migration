@@ -1,20 +1,9 @@
 import NextAuth from 'next-auth';
 import GitHubProvider from 'next-auth/providers/github';
-import { TypeORMAdapter } from '@next-auth/typeorm-adapter';
-import { createConnection } from 'typeorm';
-
-const connectionPromise = createConnection({
-  type: 'postgres',
-  url: process.env.POSTGRESQL_URI,
-  synchronize: true,
-  logging: true,
-  entities: [
-    // Add your entities here
-  ],
-});
+import { TypeORMAdapter } from '@auth/typeorm-adapter';
 
 export default NextAuth({
-  adapter: TypeORMAdapter(connectionPromise),
+  adapter: TypeORMAdapter(process.env.POSTGRESQL_URI!),
   providers: [
     GitHubProvider({
       clientId: process.env.GITHUB_CLIENT_ID as string,
@@ -34,9 +23,6 @@ export default NextAuth({
   ],
   callbacks: {
     async session({ session, user }) {
-      if (session.user && (user as any).username) {
-        session.user.username = (user as any).username;
-      }
       return session;
     }
   }
