@@ -16,6 +16,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import TextareaAutosize from 'react-textarea-autosize';
 import { MDXRemote } from 'next-mdx-remote';
+import { serialize } from 'next-mdx-remote/serialize';
+import { MDXRemoteSerializeResult } from 'next-mdx-remote';
 
 export const profileWidth = 'max-w-5xl mx-auto px-4 sm:px-6 lg:px-8';
 
@@ -30,13 +32,33 @@ export default function Profile({
   const { data: session } = useSession();
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState({
-    username: user.username,
-    image: user.image,
-    bio: user.bio || '',
-    bioMdx: user.bioMdx
+    username: user ? user.username : '',
+    image: user ? user.image : '',
+    bio: user ? user.bio || '' : '',
+    bioMdx: {} as MDXRemoteSerializeResult<Record<string, unknown>>,
   });
 
-  if (data.username !== user.username) {
+  useEffect(() => {
+    const serializeBio = async () => {
+      if (!user) {
+        const emptyMdx = await serialize('');
+        setData((prevData) => ({
+          ...prevData,
+          bioMdx: emptyMdx,
+        }));
+      } else {
+        const bioMdx = await serialize(user.bio || '');
+        setData((prevData) => ({
+          ...prevData,
+          bioMdx: bioMdx,
+        }));
+      }
+    };
+
+    serializeBio();
+  }, [user]);
+
+  if (user && data.username !== user.username) {
     setData(user);
   }
 
@@ -93,11 +115,15 @@ export default function Profile({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [onKeyDown]);
 
+  if (!user) {
+    return <div className="min-h-screen pb-20">User not found.</div>;
+  }
+
   return (
     <div className="min-h-screen pb-20">
       <div>
         <div
-          className={`h-48 w-full lg:h-64 
+          className={`h-48 w-full lg:h-64
           ${getGradient(user.username)}`}
         />
         <div
@@ -231,9 +257,7 @@ export default function Profile({
             )}
           </button>
           <Link href={`/${user.username}`} shallow replace scroll={false}>
-            <a className="rounded-full border border-gray-800 hover:border-white w-12 h-12 flex justify-center items-center transition-all">
-              <XIcon className="h-4 w-4 text-white" />
-            </a>
+            <XIcon className="rounded-full border border-gray-800 hover:border-white w-12 h-12 flex justify-center items-center transition-all h-4 w-4 text-white" />
           </Link>
         </div>
       ) : session?.username === user.username ? (
@@ -244,9 +268,7 @@ export default function Profile({
           replace
           scroll={false}
         >
-          <a className="fixed bottom-10 right-10 rounded-full border bg-black border-gray-800 hover:border-white w-12 h-12 flex justify-center items-center transition-all">
-            <EditIcon className="h-4 w-4 text-white" />
-          </a>
+          <EditIcon className="fixed bottom-10 right-10 rounded-full border bg-black border-gray-800 hover:border-white w-12 h-12 flex justify-center items-center transition-all h-4 w-4 text-white" />
         </Link>
       ) : null}
     </div>

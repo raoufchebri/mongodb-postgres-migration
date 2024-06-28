@@ -44,7 +44,7 @@ Et vivamus lorem pulvinar nascetur non. Pulvinar a sed platea rhoncus ac mauris 
 export async function getUser(username: string): Promise<UserProps | null> {
   const { Client } = require('pg');
   const client = new Client({
-    connectionString: process.env.POSTGRES_URI,
+    connectionString: process.env.POSTGRESQL_URI,
   });
 
   await client.connect();
@@ -72,7 +72,7 @@ export async function getUser(username: string): Promise<UserProps | null> {
 export async function getFirstUser(): Promise<UserProps | null> {
   const { Client } = require('pg');
   const client = new Client({
-    connectionString: process.env.POSTGRES_URI,
+    connectionString: process.env.POSTGRESQL_URI,
   });
 
   await client.connect();
@@ -99,7 +99,7 @@ export async function getFirstUser(): Promise<UserProps | null> {
 export async function getAllUsers(): Promise<ResultProps[]> {
   const { Client } = require('pg');
   const client = new Client({
-    connectionString: process.env.POSTGRES_URI,
+    connectionString: process.env.POSTGRESQL_URI,
   });
 
   await client.connect();
@@ -132,7 +132,7 @@ export async function getAllUsers(): Promise<ResultProps[]> {
 export async function searchUser(query: string): Promise<UserProps[]> {
   const { Client } = require('pg');
   const client = new Client({
-    connectionString: process.env.POSTGRES_URI,
+    connectionString: process.env.POSTGRESQL_URI,
   });
 
   await client.connect();
@@ -163,7 +163,7 @@ export async function searchUser(query: string): Promise<UserProps[]> {
 export async function getUserCount(): Promise<number> {
   const { Client } = require('pg');
   const client = new Client({
-    connectionString: process.env.POSTGRES_URI,
+    connectionString: process.env.POSTGRESQL_URI,
   });
 
   await client.connect();
@@ -179,7 +179,7 @@ export async function getUserCount(): Promise<number> {
 export async function updateUser(username: string, bio: string) {
   const { Client } = require('pg');
   const client = new Client({
-    connectionString: process.env.POSTGRES_URI,
+    connectionString: process.env.POSTGRESQL_URI,
   });
 
   await client.connect();

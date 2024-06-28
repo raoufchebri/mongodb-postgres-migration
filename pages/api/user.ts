@@ -26,10 +26,8 @@ export default async function handler(
       });
     }
     try {
-      const result = await updateUser(username, bio);
-      if (result) {
-        await res.revalidate(`/${username}`);
-      }
+      await updateUser(username, bio);
+      await res.revalidate(`/${username}`);
       const bioMdx = await getMdxSource(bio); // return bioMdx to optimistically show updated state
       return res.status(200).json(bioMdx);
     } catch (e: any) {
