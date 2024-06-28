@@ -3,7 +3,15 @@ import GitHubProvider from 'next-auth/providers/github';
 import { TypeORMAdapter } from '@auth/typeorm-adapter';
 
 export default NextAuth({
-  adapter: TypeORMAdapter(process.env.POSTGRESQL_URI!),
+  adapter: TypeORMAdapter({
+    type: 'postgres',
+    url: process.env.POSTGRESQL_URI,
+    synchronize: true,
+    logging: true,
+    entities: [
+      // Add your entities here
+    ],
+  }),
   providers: [
     GitHubProvider({
       clientId: process.env.GITHUB_CLIENT_ID as string,
