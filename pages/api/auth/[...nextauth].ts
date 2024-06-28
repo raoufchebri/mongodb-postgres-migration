@@ -34,7 +34,7 @@ export default NextAuth({
   ],
   callbacks: {
     async session({ session, user }) {
-      if (session.user) {
+      if (session.user && (user as any).username) {
         session.user.username = (user as any).username;
       }
       return session;
