@@ -5,7 +5,7 @@ import { createConnection } from 'typeorm';
 
 const connectionPromise = createConnection({
   type: 'postgres',
-  url: process.env.POSTGRES_URI,
+  url: process.env.POSTGRESQL_URI,
   synchronize: true,
   logging: true,
   entities: [
@@ -34,8 +34,9 @@ export default NextAuth({
   ],
   callbacks: {
     async session({ session, user }) {
-      // Send properties to the client, like an access_token from a provider.
-      session.user.username = user.username;
+      if (session.user) {
+        session.user.username = (user as any).username;
+      }
       return session;
     }
   }
