@@ -1,21 +1,25 @@
 import NextAuth from 'next-auth';
 import GitHubProvider from 'next-auth/providers/github';
 import { TypeORMAdapter } from '@auth/typeorm-adapter';
+import { DataSource } from 'typeorm';
+import { User } from '../../../entities/User'; // Adjust the import path as needed
+
+const dataSourceOptions = {
+  type: 'postgres',
+  url: process.env.POSTGRESQL_URI,
+  synchronize: true,
+  logging: true,
+  entities: [User],
+  migrations: [],
+  subscribers: [],
+};
 
 export default NextAuth({
-  adapter: TypeORMAdapter({
-    type: 'postgres',
-    url: process.env.POSTGRESQL_URI,
-    synchronize: true,
-    logging: true,
-    entities: [
-      // Add your entities here
-    ],
-  }),
+  adapter: TypeORMAdapter(dataSourceOptions),
   providers: [
     GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID as string,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+      clientId: process.env.AUTH_GITHUB_ID as string,
+      clientSecret: process.env.AUTH_GITHUB_SECRET as string,
       profile(profile) {
         return {
           id: profile.id.toString(),
