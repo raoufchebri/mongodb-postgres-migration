@@ -1,4 +1,5 @@
-import clientPromise from '@/lib/mongodb';
+import { pgTable, serial, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { Pool } from 'pg';
 import { remark } from 'remark';
 import remarkMdx from 'remark-mdx';
 import { serialize } from 'next-mdx-remote/serialize';
@@ -42,170 +43,137 @@ Tincidunt quam neque in cursus viverra orci, dapibus nec tristique. Nullam ut si
 Et vivamus lorem pulvinar nascetur non. Pulvinar a sed platea rhoncus ac mauris amet. Urna, sem pretium sit pretium urna, senectus vitae. Scelerisque fermentum, cursus felis dui suspendisse velit pharetra. Augue et duis cursus maecenas eget quam lectus. Accumsan vitae nascetur pharetra rhoncus praesent dictum risus suspendisse.`;
 
 export async function getUser(username: string): Promise<UserProps | null> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  const results = await collection.findOne<UserProps>(
-    { username },
-    { projection: { _id: 0, emailVerified: 0 } }
-  );
-  if (results) {
-    return {
-      ...results,
-      bioMdx: await getMdxSource(results.bio || placeholderBio)
-    };
-  } else {
-    return null;
+  const pool = new Pool({
+    connectionString: process.env.POSTGRES_CONNECTION_URI,
+  });
+
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      'SELECT name, username, email, image, bio, followers, verified FROM "user" WHERE username = $1',
+      [username]
+    );
+
+    if (res.rows.length > 0) {
+      const user = res.rows[0];
+      return {
+        ...user,
+        bioMdx: await getMdxSource(user.bio || placeholderBio),
+      };
+    } else {
+      return null;
+    }
+  } finally {
+    client.release();
   }
 }
 
 export async function getFirstUser(): Promise<UserProps | null> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  const results = await collection.findOne<UserProps>(
-    {},
-    {
-      projection: { _id: 0, emailVerified: 0 }
+  const pool = new Pool({
+    connectionString: process.env.POSTGRES_CONNECTION_URI,
+  });
+
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      'SELECT name, username, email, image, bio, followers, verified FROM "user" ORDER BY id LIMIT 1'
+    );
+
+    if (res.rows.length > 0) {
+      const user = res.rows[0];
+      return {
+        ...user,
+        bioMdx: await getMdxSource(user.bio || placeholderBio),
+      };
+    } else {
+      return null;
     }
-  );
-  if (results) {
-    return {
-      ...results,
-      bioMdx: await getMdxSource(results.bio || placeholderBio)
-    };
-  } else {
-    return null;
+  } finally {
+    client.release();
   }
 }
 
 export async function getAllUsers(): Promise<ResultProps[]> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection
-    .aggregate<ResultProps>([
-      {
-        //sort by follower count
-        $sort: {
-          followers: -1
-        }
-      },
-      {
-        $limit: 100
-      },
-      {
-        $group: {
-          _id: {
-            $toLower: { $substrCP: ['$name', 0, 1] }
-          },
-          users: {
-            $push: {
-              name: '$name',
-              username: '$username',
-              email: '$email',
-              image: '$image',
-              followers: '$followers',
-              verified: '$verified'
-            }
-          },
-          count: { $sum: 1 }
-        }
-      },
-      {
-        //sort alphabetically
-        $sort: {
-          _id: 1
-        }
+  const pool = new Pool({
+    connectionString: process.env.POSTGRES_CONNECTION_URI,
+  });
+
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      'SELECT name, username, email, image, followers, verified FROM "user" ORDER BY followers DESC LIMIT 100'
+    );
+
+    const groupedUsers: { [key: string]: UserProps[] } = {};
+    res.rows.forEach((user) => {
+      const firstLetter = user.name.charAt(0).toLowerCase();
+      if (!groupedUsers[firstLetter]) {
+        groupedUsers[firstLetter] = [];
       }
-    ])
-    .toArray();
+      groupedUsers[firstLetter].push(user);
+    });
+
+    return Object.keys(groupedUsers).sort().map((key) => ({
+      _id: key,
+      users: groupedUsers[key],
+    }));
+  } finally {
+    client.release();
+  }
 }
 
 export async function searchUser(query: string): Promise<UserProps[]> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection
-    .aggregate<UserProps>([
-      {
-        $search: {
-          index: 'name-index',
-          /* 
-          name-index is a search index as follows:
+  const pool = new Pool({
+    connectionString: process.env.POSTGRES_CONNECTION_URI,
+  });
 
-          {
-            "mappings": {
-              "fields": {
-                "followers": {
-                  "type": "number"
-                },
-                "name": {
-                  "analyzer": "lucene.whitespace",
-                  "searchAnalyzer": "lucene.whitespace",
-                  "type": "string"
-                },
-                "username": {
-                  "type": "string"
-                }
-              }
-            }
-          }
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT name, username, email, image, followers, verified
+       FROM "user"
+       WHERE (name ILIKE $1 OR username ILIKE $1) AND verified = true
+       ORDER BY followers DESC
+       LIMIT 10`,
+      [`%${query}%`]
+    );
 
-          */
-          text: {
-            query: query,
-            path: {
-              wildcard: '*' // match on both name and username
-            },
-            fuzzy: {},
-            score: {
-              // search ranking algorithm: multiply relevance score by the log1p of follower count
-              function: {
-                multiply: [
-                  {
-                    score: 'relevance'
-                  },
-                  {
-                    log1p: {
-                      path: {
-                        value: 'followers'
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        }
-      },
-      {
-        // filter out users that are not verified
-        $match: {
-          verified: true
-        }
-      },
-      // limit to 10 results
-      {
-        $limit: 10
-      },
-      {
-        $project: {
-          _id: 0,
-          emailVerified: 0,
-          score: {
-            $meta: 'searchScore'
-          }
-        }
-      }
-    ])
-    .toArray();
+    return await Promise.all(res.rows.map(async (user) => ({
+      ...user,
+      bioMdx: await getMdxSource(user.bio || placeholderBio),
+    })));
+  } finally {
+    client.release();
+  }
 }
 
 export async function getUserCount(): Promise<number> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection.countDocuments();
+  const pool = new Pool({
+    connectionString: process.env.POSTGRES_CONNECTION_URI,
+  });
+
+  const client = await pool.connect();
+  try {
+    const res = await client.query('SELECT COUNT(*) FROM "user"');
+    return parseInt(res.rows[0].count, 10);
+  } finally {
+    client.release();
+  }
 }
 
 export async function updateUser(username: string, bio: string) {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection.updateOne({ username }, { $set: { bio } });
+  const pool = new Pool({
+    connectionString: process.env.POSTGRES_CONNECTION_URI,
+  });
+
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      'UPDATE "user" SET bio = $1, updated_at = NOW() WHERE username = $2',
+      [bio, username]
+    );
+    return res.rowCount !== null && res.rowCount > 0;
+  } finally {
+    client.release();
+  }
 }
