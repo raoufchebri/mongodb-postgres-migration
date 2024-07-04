@@ -3,7 +3,7 @@ import { remark } from 'remark';
 import remarkMdx from 'remark-mdx';
 import { serialize } from 'next-mdx-remote/serialize';
 import type { MDXRemoteSerializeResult } from 'next-mdx-remote';
-import client from '../lib/postgresql';
+import client from '@/lib/postgresql';
 
 export interface UserProps {
   name: string;
@@ -43,7 +43,6 @@ Tincidunt quam neque in cursus viverra orci, dapibus nec tristique. Nullam ut si
 Et vivamus lorem pulvinar nascetur non. Pulvinar a sed platea rhoncus ac mauris amet. Urna, sem pretium sit pretium urna, senectus vitae. Scelerisque fermentum, cursus felis dui suspendisse velit pharetra. Augue et duis cursus maecenas eget quam lectus. Accumsan vitae nascetur pharetra rhoncus praesent dictum risus suspendisse.`;
 
 export async function getUser(username: string): Promise<UserProps | null> {
-  const client = require('../lib/postgresql');
   const query = 'SELECT name, username, email, image, bio, followers, verified FROM users WHERE username = $1';
   const values = [username];
   const result = await client.query(query, values);
@@ -59,7 +58,6 @@ export async function getUser(username: string): Promise<UserProps | null> {
 }
 
 export async function getFirstUser(): Promise<UserProps | null> {
-  const client = require('../lib/postgresql');
   const query = 'SELECT name, username, email, image, bio, followers, verified FROM users LIMIT 1';
   const result = await client.query(query);
   const user = result.rows[0];
@@ -74,7 +72,6 @@ export async function getFirstUser(): Promise<UserProps | null> {
 }
 
 export async function getAllUsers(): Promise<ResultProps[]> {
-  const client = require('../lib/postgresql');
   const query = `
     SELECT
       LOWER(SUBSTRING(name, 1, 1)) AS _id,
@@ -99,7 +96,6 @@ export async function getAllUsers(): Promise<ResultProps[]> {
 }
 
 export async function searchUser(query: string): Promise<UserProps[]> {
-  const client = require('../lib/postgresql');
   const searchQuery = `
     SELECT
       name,
@@ -128,8 +124,6 @@ export async function searchUser(query: string): Promise<UserProps[]> {
 }
 
 export async function getUserCount(): Promise<number> {
-  const client = require('../lib/postgresql');
-
   try {
     const res = await client.query('SELECT COUNT(*) FROM users');
     return parseInt(res.rows[0].count, 10);
@@ -139,8 +133,6 @@ export async function getUserCount(): Promise<number> {
 }
 
 export async function updateUser(username: string, bio: string) {
-  const client = require('../lib/postgresql');
-
   try {
     await client.query(
       'UPDATE users SET bio = $2 WHERE username = $1',
