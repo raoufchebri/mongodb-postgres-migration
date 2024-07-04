@@ -3,6 +3,7 @@ import { remark } from 'remark';
 import remarkMdx from 'remark-mdx';
 import { serialize } from 'next-mdx-remote/serialize';
 import type { MDXRemoteSerializeResult } from 'next-mdx-remote';
+import client from '../lib/postgresql';
 
 export interface UserProps {
   name: string;
