@@ -10,7 +10,7 @@ const icons_1 = require("@/components/icons");
 function DirectoryResults({ users }) {
     return (<ul role="list" className="relative z-0 directory-divide-y">
       {users.map((user) => (<li key={user.username}>
-          <link_1.default href={`/${user.username}`}>
+          <link_1.default href={`/${user.username}`} legacyBehavior>
             <a>
               <div className="relative px-6 py-4 flex items-center space-x-3 focus-within:ring-0">
                 <div className="flex-shrink-0 h-12 w-12 rounded-full overflow-hidden">
