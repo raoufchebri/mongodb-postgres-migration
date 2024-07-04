@@ -127,35 +127,25 @@ export async function searchUser(query: string): Promise<UserProps[]> {
 }
 
 export async function getUserCount(): Promise<number> {
-const { Client } = require('pg');
-const client = new Client({
-  connectionString: process.env.POSTGRES_URI,
-});
+  const client = require('../lib/postgresql');
 
-await client.connect();
-
-try {
-  const res = await client.query('SELECT COUNT(*) FROM users');
-  return parseInt(res.rows[0].count, 10);
-} finally {
-  await client.end();
-}
+  try {
+    const res = await client.query('SELECT COUNT(*) FROM users');
+    return parseInt(res.rows[0].count, 10);
+  } finally {
+    // No need to end the client connection as it is managed by the singleton
+  }
 }
 
 export async function updateUser(username: string, bio: string) {
-const { Client } = require('pg');
-const client = new Client({
-  connectionString: process.env.POSTGRES_URI,
-});
+  const client = require('../lib/postgresql');
 
-await client.connect();
-
-try {
-  await client.query(
-    'UPDATE users SET bio = $2 WHERE username = $1',
-    [username, bio]
-  );
-} finally {
-  await client.end();
-}
+  try {
+    await client.query(
+      'UPDATE users SET bio = $2 WHERE username = $1',
+      [username, bio]
+    );
+  } finally {
+    // No need to end the client connection as it is managed by the singleton
+  }
 }
