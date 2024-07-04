@@ -26,7 +26,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const migrator_1 = require("drizzle-orm/node-postgres/migrator");
 const pg_1 = require("pg");
-const schema = __importStar(require("./schema"));
+const schema = __importStar(require("./schema.cjs"));
 const node_postgres_1 = require("drizzle-orm/node-postgres");
 const pool = new pg_1.Pool({
     connectionString: process.env.POSTGRES_CONNECTION_URI,
