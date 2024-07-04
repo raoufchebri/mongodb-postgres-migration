@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getStaticProps = void 0;
+exports.default = Home;
 const profile_1 = __importDefault(require("@/components/profile"));
 const user_1 = require("@/lib/api/user");
 const meta_1 = require("@/components/layout/meta");
@@ -11,7 +12,6 @@ const mongodb_1 = __importDefault(require("@/lib/mongodb"));
 function Home({ user }) {
     return <profile_1.default user={user} settings={false}/>;
 }
-exports.default = Home;
 const getStaticProps = async () => {
     // You should remove this try-catch block once your MongoDB Cluster is fully provisioned
     try {

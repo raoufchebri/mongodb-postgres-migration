@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = Document;
 const document_1 = require("next/document");
 function Document() {
     return (<document_1.Html lang="en">
@@ -10,4 +11,3 @@ function Document() {
       </body>
     </document_1.Html>);
 }
-exports.default = Document;

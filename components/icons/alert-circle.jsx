@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = AlertCircleIcon;
 function AlertCircleIcon({ className }) {
     return (<svg className={className} data-testid="geist-icon" fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24">
       <circle cx="12" cy="12" r="10" fill="var(--geist-fill)"/>
@@ -7,4 +8,3 @@ function AlertCircleIcon({ className }) {
       <path d="M12 16h.01" stroke="var(--geist-stroke)"/>
     </svg>);
 }
-exports.default = AlertCircleIcon;

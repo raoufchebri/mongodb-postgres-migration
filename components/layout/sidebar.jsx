@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = Sidebar;
 const react_1 = require("react");
 const react_2 = require("@headlessui/react");
 const outline_1 = require("@heroicons/react/outline");
@@ -35,7 +36,6 @@ function Sidebar({ sidebarOpen, setSidebarOpen, results, totalUsers }) {
       </react_2.Dialog>
     </react_2.Transition.Root>);
 }
-exports.default = Sidebar;
 const navigation = [
     { name: 'Dashboard', href: '#', icon: outline_1.HomeIcon, current: false },
     { name: 'Calendar', href: '#', icon: outline_1.CalendarIcon, current: false },

@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = Navbar;
 const react_1 = require("next-auth/react");
 const react_2 = require("react");
 const icons_1 = require("@/components/icons");
@@ -33,4 +34,3 @@ function Navbar({ setSidebarOpen }) {
           </button>))}
     </nav>);
 }
-exports.default = Navbar;

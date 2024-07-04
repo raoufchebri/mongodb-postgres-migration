@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = Toast;
 const gradients_1 = require("@/lib/gradients");
 const react_1 = require("react");
 const js_cookie_1 = __importDefault(require("js-cookie"));
@@ -28,4 +29,3 @@ function Toast({ username }) {
       </div>
     </div>);
 }
-exports.default = Toast;

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = handler;
 const user_1 = require("lib/api/user");
 const react_1 = require("next-auth/react");
 const user_2 = require("lib/api/user");
@@ -43,4 +44,3 @@ async function handler(req, res) {
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
-exports.default = handler;

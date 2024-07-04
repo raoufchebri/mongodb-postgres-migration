@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.profileWidth = void 0;
+exports.default = Profile;
 const gradients_1 = require("@/lib/gradients");
 const icons_1 = require("@/components/icons");
 const react_1 = require("next-auth/react");
@@ -166,7 +167,6 @@ function Profile({ settings, user }) {
         </link_1.default>) : null}
     </div>);
 }
-exports.default = Profile;
 const tabs = [
     { name: 'Profile' },
     { name: 'Work History' },

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = ClusterProvisioning;
 const icons_1 = require("@/components/icons");
 const react_1 = require("react");
 function ClusterProvisioning() {
@@ -47,4 +48,3 @@ function ClusterProvisioning() {
       </div>
     </div>);
 }
-exports.default = ClusterProvisioning;

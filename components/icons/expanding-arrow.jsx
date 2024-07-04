@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = ExpandingArrow;
 function ExpandingArrow({ className }) {
     return (<div className="relative flex items-center group">
       <svg className={`${className ? className : 'w-4 h-4'} absolute group-hover:opacity-0 group-hover:translate-x-1 transition-all`} xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="16" height="16">
@@ -10,4 +11,3 @@ function ExpandingArrow({ className }) {
       </svg>
     </div>);
 }
-exports.default = ExpandingArrow;

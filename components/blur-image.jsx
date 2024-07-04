@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = BlurImage;
 const image_1 = __importDefault(require("next/image"));
 const react_1 = require("react");
 function BlurImage(props) {
@@ -15,4 +16,3 @@ function BlurImage(props) {
             setLoading(false);
         }}/>);
 }
-exports.default = BlurImage;

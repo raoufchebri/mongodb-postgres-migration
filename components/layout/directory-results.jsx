@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = DirectoryResults;
 const link_1 = __importDefault(require("next/link"));
 const blur_image_1 = __importDefault(require("../blur-image"));
 const icons_1 = require("@/components/icons");
@@ -34,4 +35,3 @@ function DirectoryResults({ users }) {
         </li>))}
     </ul>);
 }
-exports.default = DirectoryResults;

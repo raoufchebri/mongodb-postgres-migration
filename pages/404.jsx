@@ -24,6 +24,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getStaticProps = void 0;
+exports.default = Custom404;
 const meta_1 = __importStar(require("@/components/layout/meta"));
 var _1 = require(".");
 Object.defineProperty(exports, "getStaticProps", { enumerable: true, get: function () { return _1.getStaticProps; } });
@@ -39,4 +40,3 @@ function Custom404() {
       </h1>
     </div>);
 }
-exports.default = Custom404;

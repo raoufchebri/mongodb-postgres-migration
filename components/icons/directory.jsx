@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = DirectoryIcon;
 function DirectoryIcon({ className }) {
     return (<div className="relative flex items-center group">
       <svg className={className} data-testid="geist-icon" fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24">
@@ -8,4 +9,3 @@ function DirectoryIcon({ className }) {
       </svg>
     </div>);
 }
-exports.default = DirectoryIcon;

@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = Layout;
 const react_1 = require("react");
 const sidebar_1 = __importDefault(require("./sidebar"));
 const navbar_1 = __importDefault(require("./navbar"));
@@ -44,4 +45,3 @@ function Layout({ meta, results, totalUsers, username, clusterStillProvisioning,
       </div>
     </div>);
 }
-exports.default = Layout;

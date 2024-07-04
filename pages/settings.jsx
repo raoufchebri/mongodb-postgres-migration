@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getServerSideProps = void 0;
+exports.default = Settings;
 const profile_1 = __importDefault(require("@/components/profile"));
 const meta_1 = require("@/components/layout/meta");
 const user_1 = require("@/lib/api/user");
@@ -11,7 +12,6 @@ const react_1 = require("next-auth/react");
 function Settings({ user }) {
     return <profile_1.default settings={true} user={user}/>;
 }
-exports.default = Settings;
 const getServerSideProps = async ({ req }) => {
     const session = await (0, react_1.getSession)({ req });
     if (!session) {

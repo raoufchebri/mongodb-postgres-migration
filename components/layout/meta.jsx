@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaultMetaProps = void 0;
+exports.default = Meta;
 const head_1 = __importDefault(require("next/head"));
 exports.defaultMetaProps = {
     title: 'MongoDB Starter Kit',
@@ -40,4 +41,3 @@ function Meta({ props }) {
       <meta name="twitter:image" content={props.ogImage}/>
     </head_1.default>);
 }
-exports.default = Meta;

@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = Directory;
 const link_1 = __importDefault(require("next/link"));
 const swr_1 = __importDefault(require("swr"));
 const fetcher_1 = __importDefault(require("@/lib/fetcher"));
@@ -57,4 +58,3 @@ function Directory({ results, totalUsers }) {
       </nav>
     </aside>);
 }
-exports.default = Directory;
