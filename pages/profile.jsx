@@ -1,13 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getServerSideProps = void 0;
-exports.default = Profile;
-const react_1 = require("next-auth/react");
-function Profile() {
+import { getSession } from "next-auth/react";
+
+export default function Profile() {
     return <div>Profile</div>;
 }
-const getServerSideProps = async ({ req }) => {
-    const session = await (0, react_1.getSession)({ req });
+
+export const getServerSideProps = async ({ req }) => {
+    const session = await getSession({ req });
     if (!session) {
         return {
             redirect: {
@@ -23,4 +21,3 @@ const getServerSideProps = async ({ req }) => {
         }
     };
 };
-exports.getServerSideProps = getServerSideProps;

@@ -1,4 +1,4 @@
-import client from '../lib/postgresql.js';
+import client from './lib/postgresql.js';
 
 async function testConnection() {
   try {
