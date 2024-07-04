@@ -11,5 +11,5 @@ export const user = pgTable('user', {
   followers: serial('followers').default(0),
   verified: boolean('verified').default(false),
   createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+  updatedAt: timestamp('updated_at').defaultNow().$onUpdateFn(() => new Date()),
 });
