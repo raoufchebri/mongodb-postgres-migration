@@ -1,4 +1,3 @@
-import { pgTable, serial, text, timestamp, boolean } from 'drizzle-orm/pg-core';
 import { Pool } from 'pg';
 import { remark } from 'remark';
 import remarkMdx from 'remark-mdx';
