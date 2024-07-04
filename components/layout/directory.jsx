@@ -20,11 +20,9 @@ function Directory({ results, totalUsers }) {
     return (<aside className="flex-shrink-0 w-full bg-black sm:w-96 h-full overflow-scroll border-r border-gray-800">
       <div className="px-6 pt-6 pb-0 sticky top-0 bg-black z-20">
         <link_1.default href="/">
-          <a>
-            <div className="bg-dark-accent-1 hover:bg-dark-accent-2 transition-all rounded-2xl h-12 w-12 flex justify-center items-center">
-              <icons_1.DirectoryIcon className="text-white"/>
-            </div>
-          </a>
+          <div className="bg-dark-accent-1 hover:bg-dark-accent-2 transition-all rounded-2xl h-12 w-12 flex justify-center items-center">
+            <icons_1.DirectoryIcon className="text-white"/>
+          </div>
         </link_1.default>
         <p className="mt-8 text-2xl text-white font-bold">Directory</p>
         <p className="mt-2 text-sm text-dark-accent-5">
