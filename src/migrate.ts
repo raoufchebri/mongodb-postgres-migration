@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import * as schema from './schema';
+import { drizzle } from 'drizzle-orm/node-postgres';
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_CONNECTION_URI,
