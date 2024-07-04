@@ -42,16 +42,15 @@ Tincidunt quam neque in cursus viverra orci, dapibus nec tristique. Nullam ut si
 Et vivamus lorem pulvinar nascetur non. Pulvinar a sed platea rhoncus ac mauris amet. Urna, sem pretium sit pretium urna, senectus vitae. Scelerisque fermentum, cursus felis dui suspendisse velit pharetra. Augue et duis cursus maecenas eget quam lectus. Accumsan vitae nascetur pharetra rhoncus praesent dictum risus suspendisse.`;
 
 export async function getUser(username: string): Promise<UserProps | null> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  const results = await collection.findOne<UserProps>(
-    { username },
-    { projection: { _id: 0, emailVerified: 0 } }
-  );
-  if (results) {
+  const client = require('../lib/postgresql');
+  const query = 'SELECT name, username, email, image, bio, followers, verified FROM users WHERE username = $1';
+  const values = [username];
+  const result = await client.query(query, values);
+  const user = result.rows[0];
+  if (user) {
     return {
-      ...results,
-      bioMdx: await getMdxSource(results.bio || placeholderBio)
+      ...user,
+      bioMdx: await getMdxSource(user.bio || placeholderBio)
     };
   } else {
     return null;
@@ -59,18 +58,14 @@ export async function getUser(username: string): Promise<UserProps | null> {
 }
 
 export async function getFirstUser(): Promise<UserProps | null> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  const results = await collection.findOne<UserProps>(
-    {},
-    {
-      projection: { _id: 0, emailVerified: 0 }
-    }
-  );
-  if (results) {
+  const client = require('../lib/postgresql');
+  const query = 'SELECT name, username, email, image, bio, followers, verified FROM users LIMIT 1';
+  const result = await client.query(query);
+  const user = result.rows[0];
+  if (user) {
     return {
-      ...results,
-      bioMdx: await getMdxSource(results.bio || placeholderBio)
+      ...user,
+      bioMdx: await getMdxSource(user.bio || placeholderBio)
     };
   } else {
     return null;
@@ -78,124 +73,57 @@ export async function getFirstUser(): Promise<UserProps | null> {
 }
 
 export async function getAllUsers(): Promise<ResultProps[]> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection
-    .aggregate<ResultProps>([
-      {
-        //sort by follower count
-        $sort: {
-          followers: -1
-        }
-      },
-      {
-        $limit: 100
-      },
-      {
-        $group: {
-          _id: {
-            $toLower: { $substrCP: ['$name', 0, 1] }
-          },
-          users: {
-            $push: {
-              name: '$name',
-              username: '$username',
-              email: '$email',
-              image: '$image',
-              followers: '$followers',
-              verified: '$verified'
-            }
-          },
-          count: { $sum: 1 }
-        }
-      },
-      {
-        //sort alphabetically
-        $sort: {
-          _id: 1
-        }
-      }
-    ])
-    .toArray();
+  const client = require('../lib/postgresql');
+  const query = `
+    SELECT
+      LOWER(SUBSTRING(name, 1, 1)) AS _id,
+      JSON_AGG(
+        JSON_BUILD_OBJECT(
+          'name', name,
+          'username', username,
+          'email', email,
+          'image', image,
+          'followers', followers,
+          'verified', verified
+        )
+      ) AS users,
+      COUNT(*) AS count
+    FROM users
+    GROUP BY LOWER(SUBSTRING(name, 1, 1))
+    ORDER BY _id
+    LIMIT 100
+  `;
+  const result = await client.query(query);
+  return result.rows;
 }
 
 export async function searchUser(query: string): Promise<UserProps[]> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection
-    .aggregate<UserProps>([
-      {
-        $search: {
-          index: 'name-index',
-          /* 
-          name-index is a search index as follows:
-
-          {
-            "mappings": {
-              "fields": {
-                "followers": {
-                  "type": "number"
-                },
-                "name": {
-                  "analyzer": "lucene.whitespace",
-                  "searchAnalyzer": "lucene.whitespace",
-                  "type": "string"
-                },
-                "username": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-
-          */
-          text: {
-            query: query,
-            path: {
-              wildcard: '*' // match on both name and username
-            },
-            fuzzy: {},
-            score: {
-              // search ranking algorithm: multiply relevance score by the log1p of follower count
-              function: {
-                multiply: [
-                  {
-                    score: 'relevance'
-                  },
-                  {
-                    log1p: {
-                      path: {
-                        value: 'followers'
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        }
-      },
-      {
-        // filter out users that are not verified
-        $match: {
-          verified: true
-        }
-      },
-      // limit to 10 results
-      {
-        $limit: 10
-      },
-      {
-        $project: {
-          _id: 0,
-          emailVerified: 0,
-          score: {
-            $meta: 'searchScore'
-          }
-        }
-      }
-    ])
-    .toArray();
+  const client = require('../lib/postgresql');
+  const searchQuery = `
+    SELECT
+      name,
+      username,
+      email,
+      image,
+      bio,
+      followers,
+      verified,
+      ts_rank_cd(to_tsvector('english', name || ' ' || username), to_tsquery('english', $1)) AS score
+    FROM users
+    WHERE to_tsvector('english', name || ' ' || username) @@ to_tsquery('english', $1)
+      AND verified = true
+    ORDER BY score DESC
+    LIMIT 10
+  `;
+  const values = [query];
+  const result = await client.query(searchQuery, values);
+  const users = await Promise.all(
+    result.rows.map(async (user: UserProps) => ({
+      ...user,
+      bioMdx: await getMdxSource(user.bio || placeholderBio)
+    }))
+  );
+  return users;
 }
 
 export async function getUserCount(): Promise<number> {
