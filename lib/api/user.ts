@@ -43,137 +43,154 @@ Tincidunt quam neque in cursus viverra orci, dapibus nec tristique. Nullam ut si
 Et vivamus lorem pulvinar nascetur non. Pulvinar a sed platea rhoncus ac mauris amet. Urna, sem pretium sit pretium urna, senectus vitae. Scelerisque fermentum, cursus felis dui suspendisse velit pharetra. Augue et duis cursus maecenas eget quam lectus. Accumsan vitae nascetur pharetra rhoncus praesent dictum risus suspendisse.`;
 
 export async function getUser(username: string): Promise<UserProps | null> {
-  const pool = new Pool({
-    connectionString: process.env.POSTGRES_CONNECTION_URI,
-  });
+const { Client } = require('pg');
+const client = new Client({
+  connectionString: process.env.POSTGRES_URI,
+});
 
-  const client = await pool.connect();
-  try {
-    const res = await client.query(
-      'SELECT name, username, email, image, bio, followers, verified FROM "user" WHERE username = $1',
-      [username]
-    );
+await client.connect();
 
-    if (res.rows.length > 0) {
-      const user = res.rows[0];
-      return {
-        ...user,
-        bioMdx: await getMdxSource(user.bio || placeholderBio),
-      };
-    } else {
-      return null;
-    }
-  } finally {
-    client.release();
+try {
+  const res = await client.query(
+    'SELECT id, name, username, email, image, bio, bio_mdx, followers, verified FROM users WHERE username = $1',
+    [username]
+  );
+
+  if (res.rows.length > 0) {
+    const user = res.rows[0];
+    return {
+      ...user,
+      bioMdx: await getMdxSource(user.bio || placeholderBio),
+    };
+  } else {
+    return null;
   }
+} finally {
+  await client.end();
+}
 }
 
 export async function getFirstUser(): Promise<UserProps | null> {
-  const pool = new Pool({
-    connectionString: process.env.POSTGRES_CONNECTION_URI,
-  });
+const { Client } = require('pg');
+const client = new Client({
+  connectionString: process.env.POSTGRES_URI,
+});
 
-  const client = await pool.connect();
-  try {
-    const res = await client.query(
-      'SELECT name, username, email, image, bio, followers, verified FROM "user" ORDER BY id LIMIT 1'
-    );
+await client.connect();
 
-    if (res.rows.length > 0) {
-      const user = res.rows[0];
-      return {
-        ...user,
-        bioMdx: await getMdxSource(user.bio || placeholderBio),
-      };
-    } else {
-      return null;
-    }
-  } finally {
-    client.release();
+try {
+  const res = await client.query(
+    'SELECT id, name, username, email, image, bio, bio_mdx, followers, verified FROM users ORDER BY id LIMIT 1'
+  );
+
+  if (res.rows.length > 0) {
+    const user = res.rows[0];
+    return {
+      ...user,
+      bioMdx: await getMdxSource(user.bio || placeholderBio),
+    };
+  } else {
+    return null;
   }
+} finally {
+  await client.end();
+}
 }
 
 export async function getAllUsers(): Promise<ResultProps[]> {
-  const pool = new Pool({
-    connectionString: process.env.POSTGRES_CONNECTION_URI,
-  });
+const { Client } = require('pg');
+const client = new Client({
+  connectionString: process.env.POSTGRES_URI,
+});
 
-  const client = await pool.connect();
-  try {
-    const res = await client.query(
-      'SELECT name, username, email, image, followers, verified FROM "user" ORDER BY followers DESC LIMIT 100'
-    );
+await client.connect();
 
-    const groupedUsers: { [key: string]: UserProps[] } = {};
-    res.rows.forEach((user) => {
-      const firstLetter = user.name.charAt(0).toLowerCase();
-      if (!groupedUsers[firstLetter]) {
-        groupedUsers[firstLetter] = [];
-      }
-      groupedUsers[firstLetter].push(user);
-    });
+try {
+  const res = await client.query(
+    `SELECT LOWER(SUBSTRING(name, 1, 1)) AS _id,
+            JSON_AGG(
+              JSON_BUILD_OBJECT(
+                'name', name,
+                'username', username,
+                'email', email,
+                'image', image,
+                'followers', followers,
+                'verified', verified
+              )
+            ) AS users,
+            COUNT(*) AS count
+     FROM users
+     GROUP BY LOWER(SUBSTRING(name, 1, 1))
+     ORDER BY _id`
+  );
 
-    return Object.keys(groupedUsers).sort().map((key) => ({
-      _id: key,
-      users: groupedUsers[key],
-    }));
-  } finally {
-    client.release();
-  }
+  return res.rows;
+} finally {
+  await client.end();
+}
 }
 
 export async function searchUser(query: string): Promise<UserProps[]> {
-  const pool = new Pool({
-    connectionString: process.env.POSTGRES_CONNECTION_URI,
-  });
+const { Client } = require('pg');
+const client = new Client({
+  connectionString: process.env.POSTGRES_URI,
+});
 
-  const client = await pool.connect();
-  try {
-    const res = await client.query(
-      `SELECT name, username, email, image, followers, verified
-       FROM "user"
-       WHERE (name ILIKE $1 OR username ILIKE $1) AND verified = true
-       ORDER BY followers DESC
-       LIMIT 10`,
-      [`%${query}%`]
-    );
+await client.connect();
 
-    return await Promise.all(res.rows.map(async (user) => ({
+try {
+  const res = await client.query(
+    `SELECT id, name, username, email, image, bio, bio_mdx, followers, verified,
+            ts_rank_cd(to_tsvector('english', name || ' ' || username), query) AS score
+     FROM users, to_tsquery('english', $1) query
+     WHERE to_tsvector('english', name || ' ' || username) @@ query
+       AND verified = TRUE
+     ORDER BY score DESC
+     LIMIT 10`,
+    [query]
+  );
+
+  return await Promise.all(
+    res.rows.map(async (user: UserProps) => ({
       ...user,
       bioMdx: await getMdxSource(user.bio || placeholderBio),
-    })));
-  } finally {
-    client.release();
-  }
+    }))
+  );
+} finally {
+  await client.end();
+}
 }
 
 export async function getUserCount(): Promise<number> {
-  const pool = new Pool({
-    connectionString: process.env.POSTGRES_CONNECTION_URI,
-  });
+const { Client } = require('pg');
+const client = new Client({
+  connectionString: process.env.POSTGRES_URI,
+});
 
-  const client = await pool.connect();
-  try {
-    const res = await client.query('SELECT COUNT(*) FROM "user"');
-    return parseInt(res.rows[0].count, 10);
-  } finally {
-    client.release();
-  }
+await client.connect();
+
+try {
+  const res = await client.query('SELECT COUNT(*) FROM users');
+  return parseInt(res.rows[0].count, 10);
+} finally {
+  await client.end();
+}
 }
 
 export async function updateUser(username: string, bio: string) {
-  const pool = new Pool({
-    connectionString: process.env.POSTGRES_CONNECTION_URI,
-  });
+const { Client } = require('pg');
+const client = new Client({
+  connectionString: process.env.POSTGRES_URI,
+});
 
-  const client = await pool.connect();
-  try {
-    const res = await client.query(
-      'UPDATE "user" SET bio = $1, updated_at = NOW() WHERE username = $2',
-      [bio, username]
-    );
-    return res.rowCount !== null && res.rowCount > 0;
-  } finally {
-    client.release();
-  }
+await client.connect();
+
+try {
+  await client.query(
+    'UPDATE users SET bio = $2 WHERE username = $1',
+    [username, bio]
+  );
+} finally {
+  await client.end();
+}
 }
