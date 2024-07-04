@@ -1,5 +1,6 @@
-const { MongoClient } = require('mongodb');
-const { Client } = require('pg');
+import { MongoClient } from 'mongodb';
+import pkg from 'pg';
+const { Client } = pkg;
 
 const mongoUri = 'mongodb://localhost:27017';
 const mongoDbName = 'test';
@@ -32,7 +33,7 @@ async function migrateData() {
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id
       `;
-      const userValues = [name, username, email, image, bio, followers, verified];
+      const userValues = [name, username, email, image, bio, followers.length, verified];
       const res = await pgClient.query(insertUserQuery, userValues);
       const userId = res.rows[0].id;
 
