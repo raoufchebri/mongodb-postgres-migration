@@ -1,7 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { setup } from 'scripts/setup.mjs';
 
 async function handler(_req: NextApiRequest, res: NextApiResponse) {
+  // Placeholder for setup function
+  const setup = async () => {
+    // Simulate setup process
+    return null;
+  };
+
   const message = await setup();
 
   if (message) {
