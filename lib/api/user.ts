@@ -42,170 +42,154 @@ Tincidunt quam neque in cursus viverra orci, dapibus nec tristique. Nullam ut si
 Et vivamus lorem pulvinar nascetur non. Pulvinar a sed platea rhoncus ac mauris amet. Urna, sem pretium sit pretium urna, senectus vitae. Scelerisque fermentum, cursus felis dui suspendisse velit pharetra. Augue et duis cursus maecenas eget quam lectus. Accumsan vitae nascetur pharetra rhoncus praesent dictum risus suspendisse.`;
 
 export async function getUser(username: string): Promise<UserProps | null> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  const results = await collection.findOne<UserProps>(
-    { username },
-    { projection: { _id: 0, emailVerified: 0 } }
-  );
-  if (results) {
-    return {
-      ...results,
-      bioMdx: await getMdxSource(results.bio || placeholderBio)
-    };
-  } else {
-    return null;
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRESQL_URI,
+  });
+
+  await client.connect();
+
+  try {
+    const res = await client.query(
+      'SELECT id, name, username, email, image, bio, bio_mdx, followers, verified FROM users WHERE username = $1',
+      [username]
+    );
+
+    if (res.rows.length > 0) {
+      const user = res.rows[0];
+      return {
+        ...user,
+        bioMdx: await getMdxSource(user.bio || placeholderBio),
+      };
+    } else {
+      return null;
+    }
+  } finally {
+    await client.end();
   }
 }
 
 export async function getFirstUser(): Promise<UserProps | null> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  const results = await collection.findOne<UserProps>(
-    {},
-    {
-      projection: { _id: 0, emailVerified: 0 }
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRESQL_URI,
+  });
+
+  await client.connect();
+
+  try {
+    const res = await client.query(
+      'SELECT id, name, username, email, image, bio, bio_mdx, followers, verified FROM users ORDER BY id LIMIT 1'
+    );
+
+    if (res.rows.length > 0) {
+      const user = res.rows[0];
+      return {
+        ...user,
+        bioMdx: await getMdxSource(user.bio || placeholderBio),
+      };
+    } else {
+      return null;
     }
-  );
-  if (results) {
-    return {
-      ...results,
-      bioMdx: await getMdxSource(results.bio || placeholderBio)
-    };
-  } else {
-    return null;
+  } finally {
+    await client.end();
   }
 }
 
 export async function getAllUsers(): Promise<ResultProps[]> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection
-    .aggregate<ResultProps>([
-      {
-        //sort by follower count
-        $sort: {
-          followers: -1
-        }
-      },
-      {
-        $limit: 100
-      },
-      {
-        $group: {
-          _id: {
-            $toLower: { $substrCP: ['$name', 0, 1] }
-          },
-          users: {
-            $push: {
-              name: '$name',
-              username: '$username',
-              email: '$email',
-              image: '$image',
-              followers: '$followers',
-              verified: '$verified'
-            }
-          },
-          count: { $sum: 1 }
-        }
-      },
-      {
-        //sort alphabetically
-        $sort: {
-          _id: 1
-        }
-      }
-    ])
-    .toArray();
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRESQL_URI,
+  });
+
+  await client.connect();
+
+  try {
+    const res = await client.query(
+      `SELECT LOWER(SUBSTRING(name, 1, 1)) AS _id,
+              JSON_AGG(
+                JSON_BUILD_OBJECT(
+                  'name', name,
+                  'username', username,
+                  'email', email,
+                  'image', image,
+                  'followers', followers,
+                  'verified', verified
+                )
+              ) AS users,
+              COUNT(*) AS count
+       FROM users
+       GROUP BY LOWER(SUBSTRING(name, 1, 1))
+       ORDER BY _id`
+    );
+
+    return res.rows;
+  } finally {
+    await client.end();
+  }
 }
 
 export async function searchUser(query: string): Promise<UserProps[]> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection
-    .aggregate<UserProps>([
-      {
-        $search: {
-          index: 'name-index',
-          /* 
-          name-index is a search index as follows:
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRESQL_URI,
+  });
 
-          {
-            "mappings": {
-              "fields": {
-                "followers": {
-                  "type": "number"
-                },
-                "name": {
-                  "analyzer": "lucene.whitespace",
-                  "searchAnalyzer": "lucene.whitespace",
-                  "type": "string"
-                },
-                "username": {
-                  "type": "string"
-                }
-              }
-            }
-          }
+  await client.connect();
 
-          */
-          text: {
-            query: query,
-            path: {
-              wildcard: '*' // match on both name and username
-            },
-            fuzzy: {},
-            score: {
-              // search ranking algorithm: multiply relevance score by the log1p of follower count
-              function: {
-                multiply: [
-                  {
-                    score: 'relevance'
-                  },
-                  {
-                    log1p: {
-                      path: {
-                        value: 'followers'
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        }
-      },
-      {
-        // filter out users that are not verified
-        $match: {
-          verified: true
-        }
-      },
-      // limit to 10 results
-      {
-        $limit: 10
-      },
-      {
-        $project: {
-          _id: 0,
-          emailVerified: 0,
-          score: {
-            $meta: 'searchScore'
-          }
-        }
-      }
-    ])
-    .toArray();
+  try {
+    const res = await client.query(
+      `SELECT id, name, username, email, image, bio, bio_mdx, followers, verified,
+              ts_rank_cd(to_tsvector('english', name || ' ' || username), query) AS score
+       FROM users, to_tsquery('english', $1) query
+       WHERE to_tsvector('english', name || ' ' || username) @@ query
+         AND verified = TRUE
+       ORDER BY score DESC
+       LIMIT 10`,
+      [query]
+    );
+
+    return await Promise.all(
+      res.rows.map(async (user: UserProps) => ({
+        ...user,
+        bioMdx: await getMdxSource(user.bio || placeholderBio),
+      }))
+    );
+  } finally {
+    await client.end();
+  }
 }
 
 export async function getUserCount(): Promise<number> {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection.countDocuments();
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRESQL_URI,
+  });
+
+  await client.connect();
+
+  try {
+    const res = await client.query('SELECT COUNT(*) FROM users');
+    return parseInt(res.rows[0].count, 10);
+  } finally {
+    await client.end();
+  }
 }
 
 export async function updateUser(username: string, bio: string) {
-  const client = await clientPromise;
-  const collection = client.db('test').collection('users');
-  return await collection.updateOne({ username }, { $set: { bio } });
+  const { Client } = require('pg');
+  const client = new Client({
+    connectionString: process.env.POSTGRESQL_URI,
+  });
+
+  await client.connect();
+
+  try {
+    await client.query(
+      'UPDATE users SET bio = $2 WHERE username = $1',
+      [username, bio]
+    );
+  } finally {
+    await client.end();
+  }
 }

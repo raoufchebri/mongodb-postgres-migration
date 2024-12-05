@@ -1,14 +1,14 @@
 import NextAuth from 'next-auth';
 import GitHubProvider from 'next-auth/providers/github';
-import { MongoDBAdapter } from '@next-auth/mongodb-adapter';
-import clientPromise from 'lib/mongodb';
+import { TypeORMAdapter } from '@auth/typeorm-adapter';
+import { User } from '../../../entities/User'; // Adjust the import path as needed
 
 export default NextAuth({
-  adapter: MongoDBAdapter(clientPromise),
+  adapter: TypeORMAdapter(process.env.AUTH_TYPEORM_CONNECTION),
   providers: [
     GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      clientId: process.env.AUTH_GITHUB_ID as string,
+      clientSecret: process.env.AUTH_GITHUB_SECRET as string,
       profile(profile) {
         return {
           id: profile.id.toString(),
@@ -24,8 +24,6 @@ export default NextAuth({
   ],
   callbacks: {
     async session({ session, user }) {
-      // Send properties to the client, like an access_token from a provider.
-      session.username = user.username;
       return session;
     }
   }
